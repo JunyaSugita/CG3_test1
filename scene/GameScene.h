@@ -12,6 +12,7 @@
 #include "MatCalc.h"
 #include "ParticleManager.h"
 #include "GrassManager.h"
+#include "BillboardManager.h"
 
 const float PI = 3.14159265f;
 
@@ -55,16 +56,19 @@ class GameScene {
 	//カメラ
 	ViewProjection view_;
 	int angleX_ = 0;
-	int angleY_ = 45;
+	int angleY_ = 30;
 
 	//床
 	WorldTransform worldTransform_;
 	Model* model_ = nullptr;
 
+
 	//パーティクル
+	WorldTransform parTransform_;
 	ParticleManager* particleM_ = nullptr;
 	//草
 	GrassManager* grassM_ = nullptr;
+	BillboardManager* billboardM_ = nullptr;
 
 	int scene = 0;
 

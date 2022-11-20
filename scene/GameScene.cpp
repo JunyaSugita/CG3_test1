@@ -18,8 +18,12 @@ void GameScene::Initialize() {
 	view_.UpdateMatrix();
 	
 	worldTransform_.Initialize();
-	worldTransform_.scale_ = { 10,1,10 };
+	worldTransform_.translation_ = { 0,2,0 };
 	MatCalc(worldTransform_);
+
+	parTransform_.Initialize();
+	parTransform_.scale_ = { 20,0,20 };
+	MatCalc(parTransform_);
 
 	model_ = Model::Create();
 
@@ -29,6 +33,9 @@ void GameScene::Initialize() {
 
 	grassM_ = GrassManager::Create();
 	grassM_->Update();
+
+	billboardM_ = BillboardManager::Create();
+	billboardM_->Update();
 }
 
 void GameScene::Update() {
@@ -41,6 +48,7 @@ void GameScene::Update() {
 	view_.UpdateMatrix();
 	particleM_->CameraMoveEyeVector(view_);
 	grassM_->CameraMoveEyeVector(view_);
+	billboardM_->CameraMoveEyeVector(view_);
 
 	if (input_->PushKey(DIK_LEFT)) {
 		angleX_--;
@@ -54,11 +62,28 @@ void GameScene::Update() {
 		}
 	}
 	if (input_->PushKey(DIK_DOWN)) {
-		if (angleY_ > -89) {
+		if (angleY_ > 20) {
 			angleY_--;
 		}
-	}
+	} 
 
+	Vector3 ray = view_.eye - view_.target;
+	ray.normalize();
+	ray.y = 0;
+
+	if (input_->PushKey(DIK_W)) {
+		worldTransform_.translation_ -= ray * 0.1f;
+	}
+	if (input_->PushKey(DIK_S)) {
+		worldTransform_.translation_ += ray * 0.1f;
+	}
+	if (input_->PushKey(DIK_A)) {
+		worldTransform_.translation_ -= ray.cross(view_.up) * 0.1f;
+	}
+	if (input_->PushKey(DIK_D)) {
+		worldTransform_.translation_ += ray.cross(view_.up) * 0.1f;
+	}
+	MatCalc(worldTransform_);
 	if (input_->TriggerKey(DIK_SPACE)) {
 		scene++;
 		if (scene > 2) {
@@ -68,13 +93,37 @@ void GameScene::Update() {
 
 	//パーティクル
 	if (scene == 2) {
-		particleM_->ParticleGenerate();
+		particleM_->ParticleGenerate({0,2,0});
+		particleM_->ParticleGenerate(worldTransform_.translation_);
 	}
 	particleM_->Update();
 	
 	//草
 	grassM_->Update();
 
+	billboardM_->Update();
+
+	switch (scene)
+	{
+	case 0:
+		debugText_->SetPos(400,600);
+		debugText_->Printf("Billbord");
+		break;
+	case 1:
+		debugText_->SetPos(400, 600);
+		debugText_->Printf("Billbord Y : Grass");
+		break;
+	case 2:
+		debugText_->SetPos(0, 0);
+		debugText_->Printf("Particle : emitter");
+		debugText_->SetPos(0, 60);
+		debugText_->Printf("W,A,S,D key : emitterMove");
+		break;
+	}
+	debugText_->SetPos(0, 20);
+	debugText_->Printf("SPACE key : nextScene");
+	debugText_->SetPos(0, 40);
+	debugText_->Printf("ARROW key : cameraMove");
 }
 
 void GameScene::Draw() {
@@ -103,7 +152,7 @@ void GameScene::Draw() {
 	/// <summary>
 	/// ここに3Dオブジェクトの描画処理を追加できる
 	/// </summary>
-	//model_->Draw(worldTransform_,view_);
+	model_->Draw(parTransform_,view_);
 
 	// 3Dオブジェクト描画後処理
 	Model::PostDraw();
@@ -123,6 +172,20 @@ void GameScene::Draw() {
 	}
 	// パーティクル描画後処理
 	ParticleManager::PostDraw();
+#pragma endregion
+
+#pragma ビルボードの描画
+	// パーティクル描画前処理
+	BillboardManager::PreDraw(commandList);
+
+	/// <summary>
+	/// ここにパーティクルの描画処理を追加できる
+	/// </summary>
+	if (scene == 0) {
+		billboardM_->Draw();
+	}
+	// パーティクル描画後処理
+	BillboardManager::PostDraw();
 #pragma endregion
 
 #pragma 草の描画
